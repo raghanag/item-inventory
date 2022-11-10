@@ -1,12 +1,19 @@
 package com.example.demo.validator;
 
 import com.example.demo.model.ItemVO;
+import com.example.demo.service.NormalizationService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.util.StringUtils;
 
 import javax.validation.ConstraintValidator;
 import javax.validation.ConstraintValidatorContext;
+import java.util.Map;
 
 public class ItemValidator implements
         ConstraintValidator<ItemValidatorConstraint, ItemVO> {
+
+    @Autowired
+    NormalizationService normalizationService;
 
     @Override
     public void initialize(ItemValidatorConstraint itemValidatorConstraint) {
@@ -14,30 +21,38 @@ public class ItemValidator implements
 
     @Override
     public boolean isValid(ItemVO itemVO, ConstraintValidatorContext constraintValidatorContext) {
-        if(itemVO.getSiteId() > 1 && itemVO.getSiteId() < 100){
+        boolean isValid = true;
+        constraintValidatorContext.disableDefaultConstraintViolation();
+        if(itemVO.getSiteId() > 1 && itemVO.getSiteId() < 100) {
             if(itemVO.getTitle().length() > 85) {
-                return false;
+                constraintValidatorContext.
+                        buildConstraintViolationWithTemplate("Title should be less than 85 chars").
+                        addConstraintViolation();
+                isValid = false;
             }
-            if(itemVO.getItemSpecifics().size() < 1 && itemVO.getItemSpecifics().size() > 11){
-                return false;
+            if(itemVO.getItemSpecifics().size() < 2 || itemVO.getItemSpecifics().size() > 10){
+                constraintValidatorContext.
+                        buildConstraintViolationWithTemplate("Item Specs should be between 2 and 10").
+                        addConstraintViolation();
+                isValid = false;
             }
-            itemVO.getItemSpecifics()
-                    .entrySet()
-                    .parallelStream()
-                    .forEach(entry -> {
-                        try {
-                            Thread.sleep(1000);
-                            //changing the key to first letter to Capital and calling external service
-                            //is not recommended from here.
-                        } catch (InterruptedException e) {
-                            throw new RuntimeException(e);
-                        }
-                    });
-            if(!itemVO.getItemSpecifics().containsKey("Model")
-                    && itemVO.getItemSpecifics().get("Model") == null) {
-                return false;
+            //call external service to normalize item specifics
+            Map<String, String> itemSpecifics = normalizationService.normalize(itemVO.getItemSpecifics());
+            itemVO.setItemSpecifics(itemSpecifics);
+            if(!itemVO.getItemSpecifics().containsKey("Model")) {
+                constraintValidatorContext.
+                        buildConstraintViolationWithTemplate("Item Specs should contain \"Model\" as key").
+                        addConstraintViolation();
+                isValid = false;
             }
-            return true;
+            if (!StringUtils.hasLength(itemVO.getItemSpecifics().get("Model"))){
+                constraintValidatorContext.
+                        buildConstraintViolationWithTemplate("\"Model\" value should be non-empty").
+                        addConstraintViolation();
+                isValid = false;
+            }
+
+            return isValid;
         }
         return true;
     }

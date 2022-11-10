@@ -2,9 +2,9 @@ package com.example.demo.model;
 
 import com.example.demo.validator.ItemValidatorConstraint;
 import lombok.Data;
-import org.hibernate.validator.constraints.Length;
+import org.springframework.validation.DataBinder;
+import org.springframework.web.bind.annotation.InitBinder;
 
-import javax.validation.constraints.Size;
 import java.util.List;
 import java.util.Map;
 

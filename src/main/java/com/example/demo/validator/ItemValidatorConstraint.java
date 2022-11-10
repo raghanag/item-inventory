@@ -9,7 +9,7 @@ import java.lang.annotation.*;
 @Target( { ElementType.TYPE })
 @Retention(RetentionPolicy.RUNTIME)
 public @interface ItemValidatorConstraint {
-    String message() default "One of the Validations failed!!!";
+    String message() default "One of the Item Validations failed!!!";
     Class<?>[] groups() default {};
     Class<? extends Payload>[] payload() default {};
 }
